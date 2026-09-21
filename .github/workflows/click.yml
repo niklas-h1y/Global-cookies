@@ -1,0 +1,37 @@
+name: Handle Global Click
+
+on:
+  repository_dispatch:
+    types: [cookie_clicked]
+
+permissions:
+  contents: write
+
+jobs:
+  update-score:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+
+      - name: Update the score file
+        run: |
+          # If the file doesn't exist, create it with 0 clicks
+          if [ ! -f score.json ]; then
+            echo '{"clicks": 0}' > score.json
+          fi
+          
+          # Read the current score using a quick python script
+          CURRENT_SCORE=$(python3 -c "import json; print(json.load(open('score.json'))['clicks'])")
+          NEW_SCORE=$((CURRENT_SCORE + 1))
+          
+          # Write the new score back
+          echo "{\"clicks\": $NEW_SCORE}" > score.json
+
+      - name: Commit and push changes safely
+        run: |
+          git config --global user.name "GitHub Action Bot"
+          git config --global user.email "actions@github.com"
+          git add score.json
+          git commit -m "Global score updated by player click"
+          git push
